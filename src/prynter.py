@@ -2,15 +2,6 @@ import serial
 from serial.tools.list_ports import comports
 
 
-
-def command(*args):
-    msg = bytearray()
-    for i in args:
-        if i in esc:
-            msg.append(byesc[args]
-        else:
-
-
 def select_device():
     print('Elegir impresora térmica:')
     i = 0
