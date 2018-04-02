@@ -7,7 +7,7 @@ def select_device():
     i = 0
     devices = []
     for device in comports():
-        print('{}) {} {} {}'.format(i, device.device, device.description, 
+        print('{}) {} {} {}'.format(i, device.device, device.description,
                                     device.manufacturer))
         i += 1
         devices.append(device.device)
