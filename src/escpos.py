@@ -42,7 +42,7 @@ def esc_command(*args):
     for i in args:
         if i in esc:
             aux = bytearray.fromhex(esc[i])
-        else:
+        elif isinstance(i, str):
             aux = i.encode('utf-8')
         msg.extend(aux)
     return msg
