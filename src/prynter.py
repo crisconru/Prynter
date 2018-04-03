@@ -1,5 +1,6 @@
 import serial
 from serial.tools.list_ports import comports
+import escpos
 
 
 def select_device():
@@ -19,6 +20,20 @@ class Prynter(serial.Serial):
     def __init__(self, port=None, baudrate=9600):
         super().__init__(port=port)
         print('Comunicacion abierta = {}'.format(self.is_open))
+
+    def send(self, msg, rep=3):
+        if rep:
+            if self.is_open:
+                self.write(msg)
+                return True
+            else:
+                self.open()
+                self.send(msg, rep-1)
+
+    def initialization(self):
+        msg = escpos.esc_command('ESC', '@')
+        if self.send(msg):
+            print('Initialization send')
 
 
 if __name__ == '__main__':
