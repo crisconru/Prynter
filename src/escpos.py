@@ -40,11 +40,15 @@ esc = {
 def esc_command(*args):
     msg = bytearray()
     for i in args:
+        aux = None
         if i in esc:
             aux = bytearray.fromhex(esc[i])
         elif isinstance(i, str):
-            aux = i.encode('utf-8')
-        msg.extend(aux)
+            aux = i.encode('ascii')
+        elif isinstance(i, int):
+            aux = chr(i)
+        if aux is not None:
+            msg.extend(aux)
     return msg
 
 
