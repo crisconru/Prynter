@@ -1,6 +1,6 @@
-import serial
+from serial import Serial
 from serial.tools.list_ports import comports
-import escpos
+from escpos import ESCPOS
 
 
 def select_device():
@@ -16,10 +16,11 @@ def select_device():
     return devices[int(opc)]
 
 
-class Prynter(serial.Serial):
-    def __init__(self, port=None, baudrate=9600):
+class Prynter(Serial):
+    def __init__(self, port=None, baudrate=9600, dsrdtr=True):
         super().__init__(port=port, baudrate=baudrate)
         print('Comunicacion abierta = {}'.format(self.is_open))
+        self.esc = ESCPOS()
         self.initialization()
 
     def send(self, msg, rep=3):
@@ -32,24 +33,24 @@ class Prynter(serial.Serial):
                 self.send(msg, rep-1)
 
     def initialization(self):
-        msg = escpos.esc_command_dec('ESC', '@')
+        msg = self.esc.ascii_command('ESC', '@')
         if self.send(msg):
             print('Initialization send')
             # self.adafruit()
 
     def adafruit(self):
-            msg = escpos.esc_command_dec('ESC', '7', 7, 80, 2)
+            msg = self.esc.ascii_command('ESC', '7', 7, 80, 2)
             if self.send(msg):
                 print('Adafruit configuration')
 
     def print(self, txt):
-        msg = escpos.esc_command_dec(txt)
+        msg = self.esc.string_to_escpos(txt)
         if self.send(msg):
             print('Text send')
             self.line_feed()
 
     def line_feed(self, n=1):
-        msg = escpos.esc_command_dec('LF')
+        msg = self.esc.ascii_command('LF')
         for i in range(n):
             if self.send(msg):
                 print('Line feed send')
@@ -58,18 +59,18 @@ class Prynter(serial.Serial):
         # ESC a n | n = 0 LEFT, 1 CENTER,  2 RIGHT
         alignment = {'L': 0, 'C': 1, 'R': 2}
         pos = alignment[align] if align in alignment else 0
-        msg = escpos.esc_command_dec('ESC', 'a', pos)
+        msg = self.esc.ascii_command('ESC', 'a', pos)
         if self.send(msg):
             print('Justify {} send'.format(align))
 
     def bold_text(self, n=0):
         # n = 1 BOLD | n = 0 NORMAL
-        msg = escpos.esc_command_dec('ESC', 'E', n)
+        msg = self.esc.ascii_command('ESC', 'E', n)
         if self.send(msg):
             print('Bold send')
 
     def cut(self):
-        msg = escpos.esc_command_dec(29, 86, 48)
+        msg = self.esc.dec_command(29, 86, 48)
         if self.send(msg):
             print('Cut send')
 
