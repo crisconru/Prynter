@@ -17,10 +17,24 @@ def select_device():
 
 
 class Prynter(Serial):
-    def __init__(self, port=None, baudrate=9600, dsrdtr=True):
-        super().__init__(port=port, baudrate=baudrate)
+    def __init__(self, port=None, printer='stp80'):
+        super().__init__()
+        self.printer = printer
+        self.port = port
+        if printer == 'stp80':
+            self.baudrate = 9600
+            self.dsrdtr = True
+        elif printer == 'adafruit':
+            self.baudrate = 9600
+        else:
+            self.baudrate = 9600
+            self.dsrdtr = True
+            self.rtscts = False
+            self.xonxoff = False
+        self.open()
         print('Comunicacion abierta = {}'.format(self.is_open))
         self.esc = ESCPOS()
+        self.esc.encoding('ascii')
         self.initialization()
 
     def send(self, msg, rep=3):
@@ -36,7 +50,8 @@ class Prynter(Serial):
         msg = self.esc.ascii_command('ESC', '@')
         if self.send(msg):
             print('Initialization send')
-            # self.adafruit()
+            if self.printer == 'adafruit':
+                self.adafruit()
 
     def adafruit(self):
             msg = self.esc.ascii_command('ESC', '7', 7, 80, 2)
@@ -46,14 +61,12 @@ class Prynter(Serial):
     def print(self, txt):
         msg = self.esc.string_to_escpos(txt)
         if self.send(msg):
-            print('Text send')
+            print('{} send'.format(txt))
             self.line_feed()
 
     def line_feed(self, n=1):
         msg = self.esc.ascii_command('LF')
-        for i in range(n):
-            if self.send(msg):
-                print('Line feed send')
+        [print('Line feed send') for i in range(n) if self.send(msg)]
 
     def justify(self, align="L"):
         # ESC a n | n = 0 LEFT, 1 CENTER,  2 RIGHT
@@ -65,36 +78,39 @@ class Prynter(Serial):
 
     def bold_text(self, n=0):
         # n = 1 BOLD | n = 0 NORMAL
-        msg = self.esc.ascii_command('ESC', 'E', n)
+        bold = 1 if n else 0
+        msg = self.esc.ascii_command('ESC', 'E', bold)
         if self.send(msg):
             print('Bold send')
 
-    def cut(self):
-        msg = self.esc.dec_command(29, 86, 48)
+    def cut(self, partial=None):
+        msg = self.esc.ascii_command('GS', 'V', '0') if not partial else \
+            self.esc.ascii_command('GS', 'V', '1')
+        # msg = self.esc.dec_command(29, 86, 48)
         if self.send(msg):
             print('Cut send')
 
     def test(self):
         self.justify('C')
         self.print('Centro')
-        #self.line_feed()
         self.justify('R')
         self.bold_text(1)
         self.print('Derecha negra')
-        #self.line_feed()
         self.justify()
         self.bold_text(0)
         self.print('Izquierda normal')
-        #self.line_feed()
-        self.print('tocame el pollonazo hijo de mil putas me caguen dios hijo de mordor')
-        self.cut()
-        self.print('\n\n')
+        self.print('Como no estás experimentado en las cosas del mundo, todas '
+                   'las cosas que tienen algo de dificultad te parecen '
+                   'imposibles. Confía en el tiempo, que suele dar dulces '
+                   'a muchas amargas dificultades.')
+        self.line_feed()
+        self.cut(partial=False)
 
 
 if __name__ == '__main__':
     port = select_device()
     print('Seleccionado {}'.format(port))
-    impresora = Prynter(port=port)
+    impresora = Prynter(port=port, printer='otra')
     opt = '9'
     while opt != '0':
         txt = input('0) Salir\n1) Inicializar\n2) Hola mundo\n3) Line Feed\n'
